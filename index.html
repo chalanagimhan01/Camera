@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>X-Ray Mirror — Live AR</title>
+<style>
+:root{color-scheme:dark;--bg:#080b12;--panel:#111827;--line:#263348;--cyan:#8deaff;--muted:#91a1b8}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#1c3048 0,#080b12 55%);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:#eef6ff;min-height:100vh}
+header{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(16px,4vw,44px);border-bottom:1px solid #ffffff12;background:#070b12aa;backdrop-filter:blur(12px)}
+.brand{font-size:18px;letter-spacing:.18em;font-weight:600}.brand span{color:var(--cyan)}.status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}.dot{width:8px;height:8px;border-radius:50%;background:#64748b}.dot.live{background:#48e0a4;box-shadow:0 0 12px #48e0a4}
+main{max-width:1440px;margin:auto;padding:24px clamp(14px,3vw,34px) 36px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px}.stage-wrap{min-width:0}.stage{position:relative;width:100%;aspect-ratio:16/10;background:#03060b;border:1px solid #263348;border-radius:18px;overflow:hidden;box-shadow:0 24px 80px #0008}.stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.stage canvas{transform:none;pointer-events:none}.placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;background:radial-gradient(ellipse,#14263b,#05080e 70%)}.placeholder h2{font-size:clamp(22px,3vw,36px);font-weight:400;letter-spacing:.08em;margin:12px 0}.placeholder p{color:var(--muted);max-width:420px;line-height:1.6;font-size:14px}.scan{width:72px;height:72px;border:1px solid #8deaff88;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 35px #52dfff22}.scan:before{content:'';width:42px;height:42px;border:1px solid var(--cyan);border-radius:50%;box-shadow:0 0 16px #8deaff}
+.overlay-label{position:absolute;left:18px;top:16px;font-size:10px;letter-spacing:.18em;color:#d9f8ff;text-shadow:0 1px 8px #000}.bottom-tag{position:absolute;right:16px;bottom:14px;font-size:10px;letter-spacing:.16em;color:#b4d8e8;background:#07111dbb;padding:8px 10px;border:1px solid #8deaff33;border-radius:6px}
+.controls{background:#0e1623;border:1px solid var(--line);border-radius:16px;padding:18px;height:max-content}.controls h3{font-size:12px;letter-spacing:.16em;color:#b8c8dc;margin:0 0 14px}.control-group{padding:14px 0;border-top:1px solid #ffffff10}.control-group:first-of-type{border-top:0}.check{display:flex;align-items:center;justify-content:space-between;color:#dce8f6;font-size:13px;margin:10px 0}.check input{accent-color:#7de7ff;width:16px;height:16px}.range-head{display:flex;justify-content:space-between;font-size:12px;color:#dce8f6;margin-bottom:9px}.range-head output{color:var(--cyan)}input[type=range]{width:100%;accent-color:#7de7ff}.btn{width:100%;border:0;border-radius:10px;padding:13px 14px;font-weight:650;cursor:pointer;background:linear-gradient(100deg,#9af0ff,#5abde5);color:#06111c;margin-top:10px}.btn.secondary{background:#1a293c;color:#e7f5ff;border:1px solid #344861}.btn:disabled{opacity:.5;cursor:not-allowed}.hint{font-size:11px;color:#91a1b8;line-height:1.55;margin:12px 0 0}.error{color:#ffb4b4;font-size:12px;line-height:1.5;margin-top:10px;display:none}.foot{grid-column:1/-1;color:#718198;font-size:11px;line-height:1.6;padding:0 4px}.pill{font-size:10px;border:1px solid #3d6577;color:#9beaff;border-radius:20px;padding:5px 8px;letter-spacing:.08em}
+@media(max-width:850px){main{grid-template-columns:1fr}.controls{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}.controls h3,.controls .full{grid-column:1/-1}.stage{aspect-ratio:4/5}.foot{grid-column:1}}
+@media(max-width:520px){header{height:58px}.brand{font-size:15px}.controls{display:block}.stage{aspect-ratio:3/4}}
+</style>
+</head>
+<body>
+<header><div class="brand">X-RAY <span>MIRROR</span></div><div class="status"><i class="dot" id="dot"></i><span id="status">CAMERA OFF</span><span class="pill">LIVE AR</span></div></header>
+<main>
+<section class="stage-wrap">
+ <div class="stage" id="stage">
+  <video id="video" autoplay playsinline muted></video><canvas id="fx"></canvas>
+  <div class="placeholder" id="placeholder"><div><div class="scan"></div><h2>See beneath the surface</h2><p>Allow camera access to turn your screen into a real-time X-Ray mirror. Move your hand in front of the camera.</p><button class="btn" id="start">ENABLE CAMERA</button><div class="error" id="error"></div></div></div>
+  <div class="overlay-label">REAL-TIME SKELETAL TRACKING</div><div class="bottom-tag">AI / AR VISUALIZATION</div>
+ </div>
+</section>
+<aside class="controls">
+ <h3>XRAY LAYERS</h3>
+ <div class="control-group">
+  <label class="check"><span>Hand bones</span><input id="handsOn" type="checkbox" checked></label>
+  <label class="check"><span>Face / skull guide</span><input id="faceOn" type="checkbox" checked></label>
+  <label class="check"><span>Tracking points</span><input id="pointsOn" type="checkbox" checked></label>
+ </div>
+ <div class="control-group">
+  <div class="range-head"><label for="glow">X-Ray glow</label><output id="glowVal">70%</output></div><input id="glow" type="range" min="0" max="100" value="70">
+  <div class="range-head" style="margin-top:18px"><label for="opacity">Bone opacity</label><output id="opacityVal">95%</output></div><input id="opacity" type="range" min="20" max="100" value="95">
+  <div class="range-head" style="margin-top:18px"><label for="size">Bone thickness</label><output id="sizeVal">5</output></div><input id="size" type="range" min="2" max="12" value="5">
+ </div>
+ <div class="control-group">
+  <button class="btn" id="restart">START CAMERA</button><button class="btn secondary" id="stop">STOP CAMERA</button>
+  <p class="hint">Tip: Keep your hand 30–70 cm from the camera and use good lighting for smoother tracking.</p>
+ </div>
+</aside>
+<div class="foot">This is an augmented-reality visual effect, not a medical X-ray. It estimates visible hand and face landmarks from the camera; it cannot see real bones or diagnose injuries. Camera processing runs in your browser.</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script>
+const video=document.getElementById('video'),canvas=document.getElementById('fx'),ctx=canvas.getContext('2d');
+const placeholder=document.getElementById('placeholder'),startBtn=document.getElementById('start'),restartBtn=document.getElementById('restart'),stopBtn=document.getElementById('stop'),statusEl=document.getElementById('status'),dot=document.getElementById('dot'),errorEl=document.getElementById('error');
+let stream=null,hands=null,faceMesh=null,raf=0,processing=false,lastVideoTime=-1,handResults=null,faceResults=null;
+const handConnections=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+const faceEdges=[[10,338],[338,297],[297,332],[332,284],[284,251],[251,389],[389,356],[356,454],[454,323],[323,361],[361,288],[288,397],[397,365],[365,379],[379,378],[378,400],[400,377],[377,152],[152,148],[148,176],[176,149],[149,150],[150,136],[136,172],[172,58],[58,132],[132,93],[93,234],[234,127],[127,162],[162,21],[21,54],[54,103],[103,67],[67,109],[109,10]];
+function xy(p){return [(1-p.x)*canvas.width,p.y*canvas.height]}
+function bone(a,b,w){const A=xy(a),B=xy(b),dx=B[0]-A[0],dy=B[1]-A[1],len=Math.hypot(dx,dy);if(len<1)return;const ang=Math.atan2(dy,dx),r=Math.max(2,w*.55);ctx.save();ctx.translate(A[0],A[1]);ctx.rotate(ang);ctx.globalAlpha=Number(document.getElementById('opacity').value)/100;
+ // luminous outer rim + ivory central shaft, with widened epiphyses
+ ctx.shadowColor='#55dcff';ctx.shadowBlur=Number(document.getElementById('glow').value)*.22;ctx.fillStyle='#56dfff';ctx.beginPath();ctx.roundRect(0,-r,len,r*2,r);ctx.fill();ctx.shadowBlur=0;
+ ctx.fillStyle='#e8faff';ctx.beginPath();ctx.roundRect(2,-Math.max(1,r*.38),Math.max(0,len-4),Math.max(2,r*.76),r*.4);ctx.fill();
+ for(const x of [0,len]){ctx.beginPath();ctx.arc(x,0,r*.8,0,Math.PI*2);ctx.fillStyle='#d8f8ff';ctx.fill();ctx.strokeStyle='#5bcde9';ctx.lineWidth=1;ctx.stroke()}
+ ctx.restore();}
+function joint(p,r){const [x,y]=xy(p);ctx.save();ctx.globalAlpha=.95;ctx.shadowColor='#63e5ff';ctx.shadowBlur=12;ctx.fillStyle='#e7fbff';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#45cce9';ctx.lineWidth=1.5;ctx.stroke();ctx.restore()}
+function drawHands(){if(!document.getElementById('handsOn').checked||!handResults?.multiHandLandmarks)return;for(const lm of handResults.multiHandLandmarks){const w=Number(document.getElementById('size').value);for(const [a,b] of handConnections)bone(lm[a],lm[b],w);if(document.getElementById('pointsOn').checked)lm.forEach((p,i)=>joint(p,i===0?5:3));}}
+function drawFace(){if(!document.getElementById('faceOn').checked||!faceResults?.multiFaceLandmarks)return;for(const lm of faceResults.multiFaceLandmarks){ctx.save();ctx.strokeStyle='#8beaff';ctx.lineWidth=1.5;ctx.globalAlpha=.7;ctx.shadowColor='#55dfff';ctx.shadowBlur=10;ctx.beginPath();faceEdges.forEach(([a,b],i)=>{const A=xy(lm[a]),B=xy(lm[b]);if(i===0)ctx.moveTo(...A);ctx.lineTo(...B)});ctx.stroke();ctx.shadowBlur=0;
+ // eye socket rings and nasal bridge, as an AR skull-guide approximation
+ for(const ids of [[33,133,159,145,33],[362,263,386,374,362]]){ctx.beginPath();ids.forEach((id,i)=>{const p=xy(lm[id]);i?ctx.lineTo(...p):ctx.moveTo(...p)});ctx.closePath();ctx.strokeStyle='#d6f8ff';ctx.lineWidth=2;ctx.stroke()}
+ [[168,6],[6,197],[197,195],[195,5],[5,4],[4,1],[1,2]].forEach(([a,b])=>{const A=xy(lm[a]),B=xy(lm[b]);ctx.beginPath();ctx.moveTo(...A);ctx.lineTo(...B);ctx.strokeStyle='#c4f5ff';ctx.lineWidth=2;ctx.stroke()});ctx.restore();}}
+function resize(){const r=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);}
+new ResizeObserver(resize).observe(document.getElementById('stage'));
+async function initTrackers(){if(!window.Hands||!window.FaceMesh)throw new Error('AI tracking libraries could not load. Check your internet connection and refresh this page.');hands=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});hands.setOptions({maxNumHands:2,modelComplexity:1,minDetectionConfidence:.55,minTrackingConfidence:.5});hands.onResults(r=>{handResults=r});faceMesh=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});faceMesh.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:.55,minTrackingConfidence:.5});faceMesh.onResults(r=>{faceResults=r});}
+async function loop(){if(!stream)return;raf=requestAnimationFrame(loop);if(video.readyState>=2&&!processing&&video.currentTime!==lastVideoTime){processing=true;lastVideoTime=video.currentTime;try{await Promise.all([hands.send({image:video}),faceMesh.send({image:video})]);}catch(e){console.warn(e)}finally{processing=false}ctx.clearRect(0,0,canvas.width,canvas.height);drawFace();drawHands();}}
+async function startCamera(){errorEl.style.display='none';startBtn.disabled=true;restartBtn.disabled=true;try{if(!hands)await initTrackers();stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:1280},height:{ideal:800}}});video.srcObject=stream;await video.play();resize();placeholder.style.display='none';statusEl.textContent='CAMERA LIVE';dot.classList.add('live');loop();}catch(e){const msg=e.name==='NotAllowedError'?'Camera permission was denied. Allow camera access in your browser address bar, then try again.':e.name==='NotFoundError'?'No camera was found on this device.':e.message||'Could not start camera.';errorEl.textContent=msg;errorEl.style.display='block';placeholder.style.display='grid';}finally{startBtn.disabled=false;restartBtn.disabled=false}}
+function stopCamera(){cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;ctx.clearRect(0,0,canvas.width,canvas.height);placeholder.style.display='grid';statusEl.textContent='CAMERA OFF';dot.classList.remove('live')}
+startBtn.addEventListener('click',startCamera);restartBtn.addEventListener('click',startCamera);stopBtn.addEventListener('click',stopCamera);
+for(const [id,out,suffix] of [['glow','glowVal','%'],['opacity','opacityVal','%'],['size','sizeVal','']])document.getElementById(id).addEventListener('input',e=>document.getElementById(out).textContent=e.target.value+suffix);
+// Request camera permission automatically on page load; the visible button remains as a fallback.
+window.addEventListener('load',()=>{setTimeout(startCamera,500)});
+</script>
+</body></html>
